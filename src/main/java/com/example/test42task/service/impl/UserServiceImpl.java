@@ -1,19 +1,19 @@
-package com.example.test42task.service;
+package com.example.test42task.service.impl;
 
 import com.example.test42task.exeptions.IllegalFieldUpdateException;
-import com.example.test42task.exeptions.ResourceNotFoundException;
+import com.example.test42task.exeptions.UserNotFoundException;
 import com.example.test42task.model.User;
 import com.example.test42task.repository.UserRepository;
+import com.example.test42task.service.UserService;
+import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 @Service
-@Transactional
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
@@ -27,16 +27,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<User> findAll() {
         return userRepository.findAll();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @Override
@@ -59,7 +57,6 @@ public class UserServiceImpl implements UserService {
         User existingUser = findById(id);
 
         validateUpdateFields(updates);
-
         applyUpdates(existingUser, updates);
 
         return userRepository.save(existingUser);
@@ -68,22 +65,25 @@ public class UserServiceImpl implements UserService {
     private void validateUpdateFields(Map<String, Object> updates) {
         updates.keySet().forEach(field -> {
             if (!ALLOWED_FIELDS.contains(field)) {
-                throw new IllegalFieldUpdateException("Field '" + field + "' is not allowed for update. Allowed fields: " + ALLOWED_FIELDS);
+                throw new IllegalFieldUpdateException("Field '"
+                        + field +
+                        "' is not allowed for update. Allowed fields: "
+                        + ALLOWED_FIELDS);
             }
         });
     }
 
     private void applyUpdates(User user, Map<String, Object> updates) {
         updates.forEach((field, value) -> {
-            switch (field) {
-                case "firstName" -> {
-                    validateStringValue(field, value);
-                    user.setFirstName((String) value);
+            try {
+                switch (field) {
+                    case "firstName", "lastName", "email" -> {
+                        validateStringValue(field, value);
+                        BeanUtils.setProperty(user, field, value);
+                    }
                 }
-                case "lastName" -> {
-                    validateStringValue(field, value);
-                    user.setLastName((String) value);
-                }
+            } catch (Exception e) {
+                throw new IllegalFieldUpdateException("Failed to update field '" + field + "': " + e.getMessage());
             }
         });
     }
@@ -99,8 +99,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void deleteById(Long id) {
-        User user = findById(id);
-
+        if (!userRepository.existsById(id)) {
+            throw new UserNotFoundException(id);
+        }
         userRepository.deleteById(id);
     }
 }

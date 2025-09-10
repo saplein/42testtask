@@ -1,6 +1,9 @@
 package com.example.test42task.controller;
 
 import com.example.test42task.dto.DeleteResponse;
+import com.example.test42task.dto.ErrorResponse;
+import com.example.test42task.dto.PatchResponse;
+import com.example.test42task.dto.PutResponse;
 import com.example.test42task.model.User;
 import com.example.test42task.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,13 +53,15 @@ public class UserController {
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class))),
+            @ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(schema = @Schema(implementation = User.class))),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
     public ResponseEntity<User> getUserById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
         User user = userService.findById(id);
+
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
 
@@ -76,15 +81,21 @@ public class UserController {
     @Operation(summary = "Fully update a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User updated successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<User> fullUpdateUser(
+    public ResponseEntity<PutResponse> fullUpdateUser(
             @Parameter(description = "ID of the user to be updated", required = true)
             @PathVariable Long id,
             @Parameter(description = "Updated user object (all fields required)", required = true)
             @Valid @RequestBody User user) {
-        User updatedUser = userService.fullUpdate(id, user);
-        return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+        userService.fullUpdate(id, user);
+
+        PutResponse response = new PutResponse(
+                "User updated successfully",
+                id
+        );
+        return ResponseEntity.ok(response);
     }
 
     // PATCH /api/users/{id}
@@ -92,15 +103,23 @@ public class UserController {
     @Operation(summary = "Partially update a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User patched successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<User> partialUpdateUser(
+    public ResponseEntity<PatchResponse> partialUpdateUser(
             @Parameter(description = "ID of the user to be updated", required = true)
             @PathVariable Long id,
             @Parameter(description = "Fields of the user to update (as key-value pairs)")
             @RequestBody Map<String, Object> updates) {
-        User patchedUser = userService.partialUpdate(id, updates);
-        return new ResponseEntity<>(patchedUser, HttpStatus.OK);
+
+        userService.partialUpdate(id, updates);
+
+        PatchResponse response = new PatchResponse(
+                "User updated successfully",
+                id,
+                updates
+        );
+        return ResponseEntity.ok(response);
     }
 
     // DELETE /api/users/{id}
@@ -108,7 +127,8 @@ public class UserController {
     @Operation(summary = "Delete a user")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     public ResponseEntity<DeleteResponse> deleteUser(
             @Parameter(description = "ID of the user to be deleted", required = true)
@@ -120,7 +140,6 @@ public class UserController {
                 "User was successfully deleted",
                 id
         );
-
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(response);
     }
 }

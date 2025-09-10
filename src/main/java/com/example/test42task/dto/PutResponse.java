@@ -8,8 +8,8 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-public class DeleteResponse {
-    @Schema(description = "Human readable message", example = "User deleted successfully")
+public class PutResponse {
+    @Schema(description = "Human readable message", example = "User updated successfully")
     private String message;
 
     @Schema(description = "Timestamp of response", example = "2023-10-10T12:00:00")
@@ -18,15 +18,13 @@ public class DeleteResponse {
     @Schema(description = "HTTP status", example = "200 OK")
     private String status;
 
-    @Schema(description = "ID of deleted user", example = "1")
+    @Schema(description = "ID of updated user", example = "1")
     private Long userId;
 
-    public DeleteResponse(String message, Long deletedUserId) {
+    public PutResponse(String message, Long userId) {
         this.message = message;
-        this.userId = deletedUserId;
+        this.userId = userId;
         this.timestamp = LocalDateTime.now();
         this.status = "200 OK";
     }
-
-
 }
