@@ -39,6 +39,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User save(User user) {
+        // Ensure default value for isSend on creation
+        user.setSend(false);
         return userRepository.save(user);
     }
 
@@ -48,7 +50,6 @@ public class UserServiceImpl implements UserService {
 
         existingUser.setFirstName(userDetails.getFirstName());
         existingUser.setLastName(userDetails.getLastName());
-
         return userRepository.save(existingUser);
     }
 
@@ -105,3 +106,4 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 }
+

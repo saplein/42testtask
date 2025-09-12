@@ -39,6 +39,11 @@ public class User {
     @Schema(description = "Time of update response", example = "2023-10-10T12:00:00")
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_send", nullable = false)
+    @Schema(description = "Flag that indicates whether message was sent", example = "false")
+    private boolean isSend = false;
+
+
     public User() {
     }
 

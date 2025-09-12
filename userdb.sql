@@ -3,10 +3,12 @@ CREATE TABLE IF NOT EXISTS users (
     first_name VARCHAR(255) NOT NULL,
     last_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_send BOOLEAN NOT NULL DEFAULT FALSE
     );
 
-CREATE TABLE user_profile (
+CREATE TABLE user_profile
+(
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
     address VARCHAR(255),
@@ -19,4 +21,10 @@ CREATE TABLE user_profile (
             ON UPDATE CASCADE,
 
     CONSTRAINT unique_user_id UNIQUE (user_id)
+);
+
+CREATE TABLE kafka_message
+(
+    id      SERIAL PRIMARY KEY,
+    message VARCHAR(255)
 );
