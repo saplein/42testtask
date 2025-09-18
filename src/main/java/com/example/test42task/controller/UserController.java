@@ -1,10 +1,6 @@
 package com.example.test42task.controller;
 
-import com.example.test42task.dto.DeleteResponse;
-import com.example.test42task.dto.ErrorResponse;
-import com.example.test42task.dto.PatchResponse;
-import com.example.test42task.dto.PutResponse;
-import com.example.test42task.model.User;
+import com.example.test42task.dto.*;
 import com.example.test42task.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +24,6 @@ public class UserController {
 
     private final UserService userService;
 
-    @Autowired
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -42,10 +36,11 @@ public class UserController {
     @ApiResponse(
             responseCode = "200",
             description = "Successfully retrieved list of users",
-            content = @Content(mediaType = "application/json", schema = @Schema(implementation = User.class))
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = UserDto.class))
     )
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.findAll();
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = userService.findAllUsers();
         return new ResponseEntity<>(users, HttpStatus.OK);
     }
 
@@ -54,13 +49,13 @@ public class UserController {
     @Operation(summary = "Get user by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "User found",
-                    content = @Content(schema = @Schema(implementation = User.class))),
+                    content = @Content(schema = @Schema(implementation = UserDto.class))),
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
     })
-    public ResponseEntity<User> getUserById(
+    public ResponseEntity<UserDto> getUserById(
             @Parameter(description = "ID of the user to be retrieved", required = true)
             @PathVariable Long id) {
-        User user = userService.findById(id);
+        UserDto user = userService.findUserById(id);
 
         return new ResponseEntity<>(user, HttpStatus.OK);
     }
@@ -69,10 +64,10 @@ public class UserController {
     @PostMapping
     @Operation(summary = "Create a new user")
     @ApiResponse(responseCode = "201", description = "User created successfully")
-    public ResponseEntity<User> createUser(
+    public ResponseEntity<UserDto> createUser(
             @Parameter(description = "User object to be created", required = true)
-            @Valid @RequestBody User user) {
-        User savedUser = userService.save(user);
+            @Valid @RequestBody UserDto user) {
+        UserDto savedUser = userService.saveUser(user);
         return new ResponseEntity<>(savedUser, HttpStatus.CREATED);
     }
 
@@ -88,12 +83,13 @@ public class UserController {
             @Parameter(description = "ID of the user to be updated", required = true)
             @PathVariable Long id,
             @Parameter(description = "Updated user object (all fields required)", required = true)
-            @Valid @RequestBody User user) {
-        userService.fullUpdate(id, user);
+            @Valid @RequestBody UserDto user) {
+        UserDto userDto = userService.fullUpdateUser(id, user);
 
         PutResponse response = new PutResponse(
                 "User updated successfully",
-                id
+                id,
+                userDto.getUserUpdated()
         );
         return ResponseEntity.ok(response);
     }
@@ -112,7 +108,7 @@ public class UserController {
             @Parameter(description = "Fields of the user to update (as key-value pairs)")
             @RequestBody Map<String, Object> updates) {
 
-        userService.partialUpdate(id, updates);
+        userService.partialUpdateUser(id, updates);
 
         PatchResponse response = new PatchResponse(
                 "User updated successfully",
@@ -134,7 +130,7 @@ public class UserController {
             @Parameter(description = "ID of the user to be deleted", required = true)
             @PathVariable Long id) {
 
-        userService.deleteById(id);
+        userService.deleteUserById(id);
 
         DeleteResponse response = new DeleteResponse(
                 "User was successfully deleted",

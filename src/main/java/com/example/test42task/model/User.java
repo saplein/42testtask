@@ -3,7 +3,9 @@ package com.example.test42task.model;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
 
     @Id
@@ -43,9 +47,6 @@ public class User {
     @Schema(description = "Flag that indicates whether message was sent", example = "false")
     private boolean isSend = false;
 
-
-    public User() {
-    }
 
     @Override
     public String toString() {

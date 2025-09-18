@@ -1,6 +1,6 @@
 package com.example.test42task.service;
 
-import com.example.test42task.model.User;
+import com.example.test42task.dto.UserDto;
 
 import java.util.List;
 import java.util.Map;
@@ -11,7 +11,7 @@ public interface UserService {
      * Найти всех пользователей
      * @return список всех пользователей
      */
-    List<User> findAll();
+    List<UserDto> findAllUsers();
 
     /**
      * Найти пользователя по ID
@@ -19,14 +19,14 @@ public interface UserService {
      * @return найденный пользователь
      * @throws: если пользователь не найден
      */
-    User findById(Long id);
+    UserDto findUserById(Long id);
 
     /**
      * Сохранить нового пользователя
      * @param user объект пользователя для сохранения
      * @return сохраненный пользователь
      */
-    User save(User user);
+    UserDto saveUser(UserDto user);
 
     /**
      * Полное обновление пользователя (PUT)
@@ -35,7 +35,7 @@ public interface UserService {
      * @return обновленный пользователь
      * @throws: если пользователь не найден
      */
-    User fullUpdate(Long id, User user);
+    UserDto fullUpdateUser(Long id, UserDto user);
 
     /**
      * Частичное обновление пользователя (PATCH)
@@ -44,12 +44,12 @@ public interface UserService {
      * @return обновленный пользователь
      * @throws: если пользователь не найден
      */
-    User partialUpdate(Long id, Map<String, Object> updates);
+    void partialUpdateUser(Long id, Map<String, Object> updates);
 
     /**
      * Удалить пользователя по ID
      * @param id ID пользователя для удаления
      * @throws: если пользователь не найден
      */
-    void deleteById(Long id);
+    void deleteUserById(Long id);
 }

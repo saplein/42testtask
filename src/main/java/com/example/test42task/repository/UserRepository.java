@@ -1,10 +1,20 @@
 package com.example.test42task.repository;
 
-import com.example.test42task.model.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import com.example.test42task.dto.UserDto;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.List;
+import java.util.Map;
 
+public interface UserRepository {
+    List<UserDto> findUsers();
+
+    UserDto findUserById(long id);
+
+    UserDto saveUser(UserDto user);
+
+    UserDto fullUpdateUser(Long id,UserDto user);
+
+    void partialUpdateUser(Long id, Map<String, Object> updates);
+
+    void deleteUserById(Long id);
 }

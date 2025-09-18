@@ -21,10 +21,10 @@ public class PutResponse {
     @Schema(description = "ID of updated user", example = "1")
     private Long userId;
 
-    public PutResponse(String message, Long userId) {
+    public PutResponse(String message, Long userId, LocalDateTime timestamp) {
         this.message = message;
         this.userId = userId;
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = timestamp;
         this.status = "200 OK";
     }
 }
