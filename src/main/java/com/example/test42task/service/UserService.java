@@ -1,6 +1,7 @@
 package com.example.test42task.service;
 
 import com.example.test42task.dto.UserDto;
+import com.example.test42task.dto.UserPatchRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public interface UserService {
      * @return обновленный пользователь
      * @throws: если пользователь не найден
      */
-    void partialUpdateUser(Long id, Map<String, Object> updates);
+    void partialUpdateUser(Long id, UserPatchRequest updates);
 
     /**
      * Удалить пользователя по ID

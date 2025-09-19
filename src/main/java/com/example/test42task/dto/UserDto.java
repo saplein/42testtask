@@ -1,5 +1,7 @@
 package com.example.test42task.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Schema(description = "DTO representing user with profile information")
+//@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserDto {
     @Schema(description = "User ID", example = "1")
     private Long userId;
@@ -19,9 +22,11 @@ public class UserDto {
     private LocalDateTime userCreated;
 
     @Schema(description = "User first name", example = "John")
+    @JsonProperty("firstName")
     private String firstName;
 
     @Schema(description = "User last name", example = "Doe")
+    @JsonProperty("lastName")
     private String lastName;
 
     @Schema(description = "User last update date", example = "2024-01-20T14:25:00")

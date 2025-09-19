@@ -30,12 +30,12 @@ public class PatchResponse {
             """,
             additionalProperties = Schema.AdditionalPropertiesValue.TRUE
     )
-    private Map<String, Object> updatedFields;
+    private UserPatchRequest updatedFields;
 
-    public PatchResponse(String message, Long userId, Map<String, Object> updatedFields) {
+    public PatchResponse(String message, Long userId, UserPatchRequest updatedFields) {
         this.message = message;
         this.userId = userId;
-        this.updatedFields = updatedFields != null ? updatedFields : new HashMap<>();
+        this.updatedFields = updatedFields;
         this.timestamp = LocalDateTime.now();
         this.status = "200 OK";
     }

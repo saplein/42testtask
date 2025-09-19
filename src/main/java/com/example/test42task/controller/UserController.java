@@ -106,14 +106,14 @@ public class UserController {
             @Parameter(description = "ID of the user to be updated", required = true)
             @PathVariable Long id,
             @Parameter(description = "Fields of the user to update (as key-value pairs)")
-            @RequestBody Map<String, Object> updates) {
+            @RequestBody UserPatchRequest userUpdates) {
 
-        userService.partialUpdateUser(id, updates);
+        userService.partialUpdateUser(id, userUpdates);
 
         PatchResponse response = new PatchResponse(
                 "User updated successfully",
                 id,
-                updates
+                userUpdates
         );
         return ResponseEntity.ok(response);
     }

@@ -1,6 +1,7 @@
 package com.example.test42task.service.impl;
 
 import com.example.test42task.dto.UserDto;
+import com.example.test42task.dto.UserPatchRequest;
 import com.example.test42task.exeptions.IllegalFieldUpdateException;
 import com.example.test42task.exeptions.UserNotFoundException;
 import com.example.test42task.repository.UserRepository;
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void partialUpdateUser(Long id, Map<String, Object> updates) {
+    public void partialUpdateUser(Long id, UserPatchRequest updates) {
         UserDto existingUser = findUserById(id);
 
         userRepository.partialUpdateUser(id, updates);

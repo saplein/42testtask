@@ -1,8 +1,13 @@
 package com.example.test42task.repository.jdbc;
 
 import com.example.test42task.dto.UserDto;
+import com.example.test42task.dto.UserPatchRequest;
+import com.example.test42task.exeptions.GlobalExceptionHandler;
+import com.example.test42task.exeptions.IllegalFieldUpdateException;
+import com.example.test42task.exeptions.ResourceNotFoundException;
 import com.example.test42task.exeptions.UserNotFoundException;
 import com.example.test42task.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -19,26 +24,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Repository
 public class UserJdbcRepository implements UserRepository {
     private final JdbcTemplate jdbcTemplate;
 
+    private final GlobalExceptionHandler globalExceptionHandler;
+
     private static final String INSERT_SQL = """
-    INSERT INTO users (created_at, first_name, last_name, updated_at, is_send)
+    
+            INSERT INTO users (created_at, first_name, last_name, updated_at, is_send)
     VALUES (?, ?, ?, ?, ?)
     """;
 
-    private static final String FULL_UPDATE_SQL = """
+    private static final String FULL_UPDATE_SQL =
+            """
     UPDATE users 
-    SET first_name = ?, 
-        last_name = ?, 
-        updated_at = ?
-    WHERE id = ?
-    """;
+    SET first_name = ?,
+                 last_name = ?,
+                 updated_at = ?
+             WHERE id = ?
+             """;
 
     private static final String DELETE_SQL = "DELETE FROM users WHERE id = ?";
 
     public UserJdbcRepository(JdbcTemplate jdbcTemplate) {
+        this.globalExceptionHandler = new GlobalExceptionHandler();
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -62,26 +73,34 @@ public class UserJdbcRepository implements UserRepository {
 
     @Override
     public List<UserDto> findUsers() {
-            String sql = """
-            SELECT * FROM users
-            """;
-        return jdbcTemplate.query(sql, new UserRowMapper());
+        String sql = "SELECT id, created_at, first_name, last_name, updated_at, is_send FROM users";
+        log.debug("Executing SQL: {}", sql);
+
+        List<UserDto> users = jdbcTemplate.query(sql, new UserRowMapper());
+        log.info("Found {} users", users.size());
+
+        return users;
     }
 
     @Override
     public UserDto findUserById(long id) {
-        String sql = """
-        SELECT * FROM users WHERE id = ? 
-        """;
+        String sql = "SELECT id, created_at, first_name, last_name, updated_at, is_send FROM users WHERE id = ?";
+        log.debug("Executing SQL: {} with id={}", sql, id);
+
         try {
-            return jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
+            UserDto user = jdbcTemplate.queryForObject(sql, new UserRowMapper(), id);
+            log.info("User with id={} found: {}", id, user);
+            return user;
         } catch (EmptyResultDataAccessException e) {
+            log.warn("User with id={} not found", id);
             throw new UserNotFoundException(id);
         }
     }
 
     @Override
     public UserDto saveUser(UserDto userDto) {
+        log.debug("Saving new user: {}", userDto);
+
         LocalDateTime now = LocalDateTime.now();
         userDto.setUserCreated(now);
         userDto.setUserUpdated(now);
@@ -101,14 +120,28 @@ public class UserJdbcRepository implements UserRepository {
         Long generatedId = keyHolder.getKey() != null ? keyHolder.getKey().longValue() : null;
         userDto.setUserId(generatedId);
 
+        log.info("User saved with id={}", generatedId);
+
         return userDto;
     }
 
     @Override
     public UserDto fullUpdateUser(Long id, UserDto userDto) {
+        log.debug("Calling fullUpdateUser with id={} and userDto={}", id, userDto);
+
+        if(userDto.getFirstName() != null || userDto.getLastName() != null ){
+            log.error("Invalid put request for user id={}", id);
+            throw new IllegalFieldUpdateException(
+                    "Отсутствуют входные данные для обновления или названия параметров указаны в неверном формате", id);
+        }
+
         LocalDateTime now = LocalDateTime.now();
 
-        int updatedRows = jdbcTemplate.update(FULL_UPDATE_SQL,
+        log.debug("Executing SQL: {} with params: firstName={}, lastName={}, updatedAt={}, id={}",
+                FULL_UPDATE_SQL, userDto.getFirstName(), userDto.getLastName(), now, id);
+
+        int updatedRows = jdbcTemplate.update(
+                FULL_UPDATE_SQL,
                 userDto.getFirstName(),
                 userDto.getLastName(),
                 Timestamp.valueOf(now),
@@ -116,75 +149,65 @@ public class UserJdbcRepository implements UserRepository {
         );
 
         if (updatedRows == 0) {
+            log.warn("User with id={} not found for full update", id);
             throw new UserNotFoundException(id);
         }
 
         userDto.setUserUpdated(now);
 
+        log.info("User with id={} successfully updated at {}", id, now);
+
         return userDto;
     }
 
-    private String buildPartialUpdateSql(Long id, Map<String, Object> updates) {
-        StringBuilder sql = new StringBuilder("UPDATE users SET ");
-
-        sql.append("updated_at = ?");
-
-        for (Map.Entry<String, Object> entry : updates.entrySet()) {
-            String field = entry.getKey();
-
-            String columnName = mapFieldToColumn(field);
-            sql.append(", ").append(columnName).append(" = ?");
-        }
-
-        sql.append(" WHERE id = ?");
-
-        return sql.toString();
-    }
-
-    private String mapFieldToColumn(String fieldName) {
-        switch (fieldName) {
-            case "firstName": return "first_name";
-            case "lastName": return "last_name";
-            default: return fieldName;
-        }
-    }
-
     @Override
-    public void partialUpdateUser(Long id, Map<String, Object> updates) {
-        if (updates == null || updates.isEmpty()) {
-            return;
+    public void partialUpdateUser(Long id, UserPatchRequest userUpdates) {
+        log.debug("Partially updating user with id={} and updates={}", id, userUpdates);
+
+        if(userUpdates.getFirstName() == null && userUpdates.getLastName() == null ){
+            log.error("Invalid patch request for user id={}", id);
+            throw new IllegalFieldUpdateException(
+                    "Отсутствуют входные данные для обновления или названия параметров указаны в неверном формате", id);
         }
 
-        String sql = buildPartialUpdateSql(id, updates);
-        Object[] params = buildParamsArray(id, updates);
-
-        int updatedRows = jdbcTemplate.update(sql, params);
-
-        if (updatedRows == 0) {
+        if(findUserById(id) == null ){
+            log.error("User with id={} not found for patch", id);
             throw new UserNotFoundException(id);
         }
-    }
 
-    private Object[] buildParamsArray(Long id, Map<String, Object> updates) {
+        List<String> updates = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        params.add(Timestamp.valueOf(LocalDateTime.now()));
-
-        for (Map.Entry<String, Object> entry : updates.entrySet()) {
-            params.add(entry.getValue());
+        if (userUpdates.getFirstName() != null) {
+            updates.add("first_name = ?");
+            params.add(userUpdates.getFirstName());
         }
 
+        if (userUpdates.getLastName() != null) {
+            updates.add("last_name = ?");
+            params.add(userUpdates.getLastName());
+        }
+
+        String sql = "UPDATE users SET updated_at = ?, " + String.join(", ", updates) + " WHERE id = ?";
+        params.add(0, Timestamp.valueOf(LocalDateTime.now()));
         params.add(id);
 
-        return params.toArray();
+        int updatedRows = jdbcTemplate.update(sql, params.toArray());
+
+        log.info("Patched user id={}, updatedRows={}", id, updatedRows);
     }
 
     @Override
     public void deleteUserById(Long id) {
+        log.debug("Deleting user with id={}", id);
+
         int updatedRows = jdbcTemplate.update(DELETE_SQL, id);
 
         if (updatedRows == 0) {
+            log.warn("Attempt to delete user with id={} failed: not found", id);
             throw new UserNotFoundException(id);
         }
+
+        log.info("Deleted user with id={}", id);
     }
 }
